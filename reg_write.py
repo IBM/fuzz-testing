@@ -6,27 +6,27 @@ from random import randrange
 import time
 
 
-# initializing register incriment for serial writes and output file name
+# initializing register increment for serial writes and output file name
 INC = int('0x01', 16)
 file_name = 'pci_write'
 
 ################################################################
-# Turns on proper enables to from user arguments.
+# Turns on proper enables from user arguments.
 # Determines which addresses in the PCIe configuration space 
 # should not be written to.
-# Logs time and date in a separte file.
+# Logs time and date in a separate file.
 # Writes to the device's PCIe configuration space and logs
 # results in terminal and separate file.
 ################################################################
 def main():
-    # intialize settings for test, turn on proper enables
+    # initialize settings for test, turn on proper enables
     settings()
     
     addr = []
     if cont == 1:
         addr = skip_reg()
     
-    # Start file
+    # Open and parse log file
     with open(file_name, "a") as myfile:
         date = os.popen('date').read()
         myfile.write('\n' + args + '\n')
@@ -39,7 +39,7 @@ def main():
 
 ###################################################################
 # Enables set based on inputs including:
-# choose device ID, range of config space (basic, full, extended), 
+# device ID, range of config space (basic, full, extended), 
 # new/continue, serial/random, registers to be skipped,
 # number of repeat tests, and help section. 
 ###################################################################
@@ -149,7 +149,7 @@ def settings():
                   '-o=: Order registers are being tested (serial = test registers in corresponding order from 0, random = test registers randomly\n' +
                   '-s=: Registers to be skipped in the next program run. Provide hexadecimal register value(s) separated with a comma (\',\').\n' +
                   '-i=: Integer value for the number of times the test should repeat with the same parameters\n' +
-                  '-h:  Help section with list of possible input commands.')
+                  '-h:  Help section with a list of possible input commands.')
             sys.exit()
         
         else:
@@ -160,7 +160,7 @@ def settings():
 ###################################################################
 # Run the program for as many iterations as user requested.
 # Inputs:
-#   output = list of results from running setpci at each address 
+# Output: list of results from running setpci at each address 
 #            being written to.
 #   addr = list of registers written to in the previous test.
 ###################################################################       
@@ -171,9 +171,9 @@ def repeat_func(output, addr):
 
 ###################################################################
 # Chooses serial or random and runs setpci utility.
-# Resulting writes are logged in the terminal and a separter file.
+# Resulting writes are logged in the terminal and a separate file.
 # Input: 
-#   output = list of results from running setpci at each address 
+# Output: list of results from running setpci at each address 
 #            being written to.
 #   addr = list of registers written to in the previous test.
 ###################################################################
@@ -214,7 +214,7 @@ def config(output, addr):
     
     # Runs random test for config space writes
     elif rand == 1:
-        # creates a list of registers that will be chosen randdomly to write to
+        # creates a list of registers that will be chosen randomly to write to
         for i in range(byte_range):
             if i in skip_arg:
                 continue
@@ -241,9 +241,9 @@ def config(output, addr):
 
 
 ###################################################################
-# Wrties the results from setpci to a separate file.
+# Writes the results from setpci to a separate file.
 # Input: 
-#   output = list of results from running setpci at each address 
+# Output: list of results from running setpci at each address 
 #            being written to.
 ###################################################################
 def write_file(output):
@@ -296,8 +296,9 @@ def set_range(byte_range, addr):
 
 
 ###################################################################
-# Creates to a list of registers that should be skipped for 
+# Creates a list of registers that should be skipped for 
 # continued tests.
+# Input:
 # Output:
 #   addr_list = list of addresses that should not be written to.
 ###################################################################
