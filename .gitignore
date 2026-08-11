@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+
+discover_offsets_*.json
+discover_offsets_*.jsonl
+discover_offsets_*.log
+fuzz_guided_*.json
+fuzz_guided_*.jsonl
+fuzz_guided_*.log
+replay_*.jsonl
