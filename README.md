@@ -26,6 +26,19 @@ experiment. Never run this tool on production, personal, or shared systems.
 
 The implementation otherwise uses only the Python standard library.
 
+## Get RAS-Strike
+
+Clone the artifact branch and enter the repository:
+
+```bash
+git clone --branch RAS-Strike --single-branch \
+  https://github.com/IBM/fuzz-testing.git ras-strike
+cd ras-strike
+```
+
+For artifact evaluation, use the commit identified as the evaluated version in
+the top-level RASCrash evaluator guide rather than an unpinned branch tip.
+
 ## Supported entry points
 
 ```text
@@ -36,8 +49,8 @@ ras_strike/                      Shared implementation
 tests/                           Non-hardware tests
 ```
 
-Older development scripts remain for provenance. The three entry points above
-are the supported interface.
+The repository intentionally contains only the supported implementation,
+non-hardware tests, documentation, and license.
 
 ## Stage 1: behavioral mapping
 
@@ -88,6 +101,36 @@ retaining a 4 KiB baseline for Stage 2 capability parsing. The limit is
 configurable and counts actual writes, so skipped offsets do not consume it.
 This run validates workflow mechanics. It does **not** reproduce the paper's
 exhaustive campaign or establish that untested offsets are inert or safe.
+
+### Focused evaluator run
+
+Even fast mode can take substantial time when it traverses all 4,096 offsets.
+On the evaluation setup, a full-range fast run can take around two hours;
+timing varies by device and platform. Exhaustive mode performs 256 writes per
+offset and takes substantially longer.
+
+Evaluators can verify the two-stage workflow with a smaller Stage 1 run. The
+following command tests 128 offsets from hexadecimal offset `0x100` through
+`0x17f` while still capturing the full 4 KiB baseline:
+
+```bash
+mkdir -p ae-results/stage1
+sudo python3 discover_interesting_offsets.py \
+  --device <BDF> \
+  --range extended \
+  --mode fast \
+  --start 100 \
+  --max-tests 128 \
+  --delay 0 \
+  --verbose \
+  --output-dir ae-results/stage1
+```
+
+The resulting partial map is valid Stage 2 input. Stage 2 uses observations
+from the tested offsets for weighting, but it does **not** limit exploration to
+`0x100` through `0x17f`: untested, non-skipped offsets remain eligible. The
+smaller Stage 1 run therefore reduces evaluation time, not the disruptive risk
+of Stage 2.
 
 ### Important options
 
@@ -251,100 +294,14 @@ changes, interrupted-run recovery, legacy JSON compatibility, capability
 parsing, deterministic weighted generation, durable Stage 2 output, pattern
 parsing, replay order, reverse mode, and dry-run behavior.
 
-## Artifact evaluation walkthrough
+## Artifact evaluation
 
-This walkthrough demonstrates the mechanics described in the paper without
-repeating the long-running exhaustive discovery campaign. Run it only in the
-dedicated evaluation VM with the assigned device.
-
-### 1. Verify the implementation without hardware
-
-Run the non-hardware test suite shown above. It provides deterministic evidence
-for cascading classification, skip/exclude handling, bounded execution,
-interruption recovery, capability parsing, weighted generation, and replay.
-
-### 2. Run bounded Stage 1
-
-```bash
-mkdir -p ae-results/stage1
-sudo python3 discover_interesting_offsets.py \
-  --device <BDF> \
-  --range extended \
-  --mode fast \
-  --value ff \
-  --max-tests 256 \
-  --delay 0 \
-  --verbose \
-  --output-dir ae-results/stage1
-```
-
-This performs 256 writes while retaining a 4 KiB baseline. It normally ends
-with `completed: true` and `stop_reason: "max_tests_reached"`. A device failure
-is a valid safety-relevant observation and may instead stop the run early.
-
-Check the four Stage 1 products:
-
-- the `.log` contains run status and durable intent records;
-- `_events.jsonl` contains parseable `intent` and `result` records;
-- `_checkpoint.json` contains the cursor, configuration, and no unresolved
-  in-flight write after a controlled completion;
-- the summary `.json` reports `stage: 1`, a 4096-entry `baseline`,
-  `result_count: 256`, category and skip lists, and `coverage` with the tested
-  offsets.
-
-The particular category contents are device-dependent. The evaluator should
-not expect this bounded run to rediscover a known failure or infer anything
-about untested offsets.
-
-To exercise recovery, press Ctrl+C during Stage 1. Confirm that the summary
-reports `completed: false` and `stop_reason: "interrupted"`, then continue:
-
-```bash
-sudo python3 discover_interesting_offsets.py \
-  --resume ae-results/stage1/discover_offsets_<timestamp>_checkpoint.json \
-  --verbose
-```
-
-An ambiguous in-flight offset is recorded under `unresolved_writes`, added to
-the skip list, and not written again.
-
-### 3. Run seeded Stage 2
-
-Use the Stage 1 summary, including a partial summary if Stage 1 was interrupted:
-
-```bash
-mkdir -p ae-results/stage2
-sudo python3 guided_fuzzer.py \
-  --device <BDF> \
-  --stage1 ae-results/stage1/discover_offsets_<timestamp>.json \
-  --iterations 1000 \
-  --writes 2 \
-  --seed 12345 \
-  --delay 0 \
-  --verbose \
-  --output-dir ae-results/stage2
-```
-
-The evaluator may let the command finish or press Ctrl+C at any time. In either
-case, check that the sequence ledger, corpus, log, and summary all exist. The
-corpus may legitimately be empty. A controlled completion reports
-`stop_reason: "iterations_complete"`; Ctrl+C reports
-`stop_reason: "interrupted"` and preserves the number of fully completed
-iterations.
-
-Verify that:
-
-- every completed sequence has an intent and result in `_sequences.jsonl`;
-- an interrupted in-flight sequence has a `sequence_interrupted` record;
-- the summary records seed `12345`, capability regions, unique-state and corpus
-  counts, Stage 1 coverage, and the paths to the ledger and corpus;
-- rerunning from the same initial device state with the same Stage 1 input,
-  options, and seed generates the same sequence stream.
-
-These checks demonstrate the two-stage behavioral mapping, durable recording,
-capability-aware weighting, seeded generation, and replay interfaces. They do
-not reproduce the complete search campaign, the paper's discovery rate, or a
-known failure.
+The RASCrash evaluator guide defines the required E1 configuration, pinned
+commit, authorized machine and BDF, exact commands, expected outputs,
+acceptance criteria, and result collection procedure. Follow that guide for
+the required evaluation run. This README is the tool reference for alternative
+Stage 1 modes, Stage 2 configuration, interruption recovery, and sequence
+replay.
 
 ## Output handling
 
