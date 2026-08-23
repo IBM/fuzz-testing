@@ -36,9 +36,6 @@ git clone --branch RAS-Strike --single-branch \
 cd ras-strike
 ```
 
-For artifact evaluation, use the commit identified as the evaluated version in
-the top-level RASCrash evaluator guide rather than an unpinned branch tip.
-
 ## Supported entry points
 
 ```text
@@ -296,12 +293,11 @@ parsing, replay order, reverse mode, and dry-run behavior.
 
 ## Artifact evaluation
 
-The RASCrash evaluator guide defines the required E1 configuration, pinned
-commit, authorized machine and BDF, exact commands, expected outputs,
-acceptance criteria, and result collection procedure. Follow that guide for
-the required evaluation run. This README is the tool reference for alternative
-Stage 1 modes, Stage 2 configuration, interruption recovery, and sequence
-replay.
+The RASCrash evaluator guide defines the required E1 configuration, authorized
+machine and BDF, exact commands, expected outputs, and acceptance criteria.
+Follow that guide for the required evaluation run. This README is the tool
+reference for alternative Stage 1 modes, Stage 2 configuration, interruption
+recovery, and sequence replay.
 
 ## Output handling
 
