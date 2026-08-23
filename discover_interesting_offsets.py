@@ -61,7 +61,18 @@ def parse_args() -> argparse.Namespace:
         help="Post-write delay in seconds (default: 0)",
     )
     parser.add_argument("-restore", "--restore", action="store_true")
-    parser.add_argument("-noreset", "--no-reset", action="store_true")
+    reset_group = parser.add_mutually_exclusive_group()
+    reset_group.add_argument(
+        "--reset-at-end",
+        action="store_true",
+        help="Request a device reset after Stage 1 completes",
+    )
+    reset_group.add_argument(
+        "-noreset",
+        "--no-reset",
+        action="store_true",
+        help="Do not reset after Stage 1 (default; retained for compatibility)",
+    )
     parser.add_argument(
         "--max-tests",
         type=int,
@@ -113,7 +124,7 @@ def main() -> None:
             value=args.value,
             delay=args.delay,
             restore=args.restore,
-            reset_at_end=not args.no_reset,
+            reset_at_end=args.reset_at_end,
             max_tests=args.max_tests,
         )
         paths = Stage1Paths.create(args.output_dir)

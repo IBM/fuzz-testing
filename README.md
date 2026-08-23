@@ -141,7 +141,8 @@ of Stage 2.
 -start, --start HEX          first offset
 -delay, --delay SECONDS      post-write delay
 -restore, --restore          restore the target byte after a completed test
--noreset, --no-reset         skip the final device-reset request
+--reset-at-end               request a device reset after Stage 1 completes
+-noreset, --no-reset         do not reset after Stage 1 (default)
 --max-tests COUNT            stop after COUNT completed write tests
 --verbose                    timestamp each write and result on stdout
 --output-dir DIRECTORY       output location
@@ -151,6 +152,9 @@ of Stage 2.
 Legacy forms such as `-d=41:00.1`, `-r=extended`, and `-s=4,78,9f` remain
 accepted. The post-write delay defaults to zero; use `--delay SECONDS` only
 when a device requires additional settling time.
+Stage 1 does not reset the device by default.
+Use `--reset-at-end` only when a final device reset is explicitly required.
+The existing `--no-reset` option remains accepted for compatibility.
 
 ### Outputs and crash recovery
 

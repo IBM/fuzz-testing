@@ -6,7 +6,9 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from discover_interesting_offsets import parse_args
 from replay_sequence import ReplayRunner, load_ledger_sequence, load_legacy_pattern
 from ras_strike.backend import diff_snapshots
 from ras_strike.capabilities import parse_capability_regions
@@ -74,6 +76,43 @@ class Stage1Tests(unittest.TestCase):
     def test_runtime_defaults_have_no_forced_delay(self) -> None:
         self.assertEqual(0, Stage1Config("00:01.0").delay)
         self.assertEqual(0, Stage2Config("00:01.0").delay)
+
+    def test_cli_device_reset_is_opt_in(self) -> None:
+        with mock.patch("sys.argv", ["discover_interesting_offsets.py", "-d", "00:01.0"]):
+            self.assertFalse(parse_args().reset_at_end)
+        with mock.patch(
+            "sys.argv",
+            ["discover_interesting_offsets.py", "-d", "00:01.0", "--no-reset"],
+        ):
+            self.assertFalse(parse_args().reset_at_end)
+        with mock.patch(
+            "sys.argv",
+            ["discover_interesting_offsets.py", "-d", "00:01.0", "--reset-at-end"],
+        ):
+            self.assertTrue(parse_args().reset_at_end)
+
+    def test_device_reset_is_opt_in(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            default_backend = FakeBackend(1)
+            default_config = Stage1Config(
+                device_id=default_backend.device_id,
+                byte_range=1,
+                mode="fast",
+            )
+            default_paths = Stage1Paths.create(Path(directory), "default-reset")
+            Stage1Runner(default_backend, default_config, default_paths).run()
+            self.assertEqual(0, default_backend.reset_count)
+
+            reset_backend = FakeBackend(1)
+            reset_config = Stage1Config(
+                device_id=reset_backend.device_id,
+                byte_range=1,
+                mode="fast",
+                reset_at_end=True,
+            )
+            reset_paths = Stage1Paths.create(Path(directory), "opt-in-reset")
+            Stage1Runner(reset_backend, reset_config, reset_paths).run()
+            self.assertEqual(1, reset_backend.reset_count)
 
     def test_fast_mode_detects_cascading_and_honors_skip(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -23,7 +23,7 @@ class Stage1Config:
     value: int = 0xFF
     delay: float = 0
     restore: bool = False
-    reset_at_end: bool = True
+    reset_at_end: bool = False
     max_tests: int | None = None
 
     def values(self) -> list[int]:
